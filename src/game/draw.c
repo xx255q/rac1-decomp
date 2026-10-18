@@ -2368,19 +2368,19 @@ void func_001F6410(int a0, int a1, int a2, int a3, int a4) {
     DrawRectOverlay_FiiiiUl(t0, t3, a3 + 3, t2, a4);
 }
 
-/* gp-relative: declared as a 2-byte type purely so -G2 places it in the
-   small-data area (placement is decided by DECLARED size), then accessed
-   as the 4-byte word it really is. gp base 0x166D00 - 0x7764 = 0x15F59C. */
-extern short D_0015F59C;
+/* gp-relative through SDATA(): gp base 0x166D00 - 0x7764 = 0x15F59C.
+   The plain name stays free for FontPrintWindow, which reaches the same
+   word with lui/lw. */
+extern s32 D_0015F59C_gp SDATA(D_0015F59C);
 
 /* Sets the word flag at D_0015F59C to 1. */
 void func_001F6598(void) {
-    *(int *)&D_0015F59C = 1;
+    D_0015F59C_gp = 1;
 }
 
 /* Clears the word flag at D_0015F59C. */
 void func_001F65A8(void) {
-    *(int *)&D_0015F59C = 0;
+    D_0015F59C_gp = 0;
 }
 
 /* String width: sums the signed width byte (+3 of each 4-byte entry of
@@ -2580,7 +2580,7 @@ void func_001F69F0(u64 color, u8 *str, s32 n, s64 tex, struct Glyph *g, f32 x, f
     s = str;
     do {
         if ((u8)(*s - 8) < 8) {
-            if ((*(s32 *)&D_0015F59C) != 0) {
+            if (D_0015F59C_gp != 0) {
                 color &= 0xFF000000;
                 color |= D_0018CBF8[*s - 8] & 0xFFFFFF;
             }
