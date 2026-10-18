@@ -1,150 +1,87 @@
-/*
- * GS packet builder for a display or draw environment (written from the assembly).
- * Writes five 64-bit words at out: out[0] = 0x66 (the GIF tag), out[1] = a mode
- * word 1..3, out[2] = a 0x3F-based field pair, out[3] = the sized rectangle
- * (by the mode and the values of the helper calls), out[4] = 0.
- * The helpers: func_00121D08 gives a record P (2 u16 words at +0 and +2 and
- * 16-bit words at +0 and +4), func_00121D18 and func_00121DB8 fill four
- * int locals when P+2 is not 2 or 3. Divisor y is never 0 on this path.
+/* NON_MATCHING func_00121DC8 -- src/core/00121D18.c
+ * Best so far: BYTES 25/884 (97.2% of the bytes match), checked 2026-10-18.
+ * Not built into anything: the retail assembly stays in the source file
+ * until a candidate is EXACT (docs/NONMATCHING.md). Start from this one.
+ * What the last attempts found:
+ *   sceGsSetDefDispEnv, written from the assembly only (libgraph; no SDK source used).
+ *   Every instruction is in retail order; only registers differ in the non-interlaced NTSC/PAL
+ *   blocks and their shared tail (scale factor in $a0 not $v0; DH/product swap $a2/$a3).
+ *   Needed: nested ifs for SMODE2, block-local magh/ox with ox = (long)off[0] + const (64-bit),
+ *   scale written inline in the non-interlaced blocks, 480p dx*2+232 in its own long variable.
+ *   Field order WXHYM (non-interlaced) and MHXYW (interlaced) were the best of 120 each.
+ *   ~11,700 permuter iterations from this version found nothing better.
  */
+
+typedef struct {
+    short interlace;
+    short omode;
+    short ffmode;
+} GsGParam_DC8;
+
+typedef struct {
+    u64 pmode;
+    u64 smode2;
+    u64 dispfb;
+    u64 display;
+    u64 bgcolor;
+} GsDispEnv_DC8;
+
+extern GsGParam_DC8 *func_00121D08_dc8(void) __asm__("func_00121D08");
+extern void func_00121DB8_dc8(int, int *, int *, int *, int *) __asm__("func_00121DB8");
 extern char D_00153140[];
-extern void *func_00121D08_x(void *) __asm__("func_00121D08");
-extern int func_00121D18_x(int) __asm__("func_00121D18");
-extern void func_00121DB8_x(int, int *, int *, int *, int *) __asm__("func_00121DB8");
-extern void func_0011A6C8_x(void *) __asm__("func_0011A6C8");
 
-void func_00121DC8(char *out, int a1, int a2, int a3, int a4, int a5) {
-    int x;
-    int y;
-    int w;
-    int h;
-    int o;
-    int l[4];
-    char *P;
-    int f2;
-    int f0s;
-    int f4s;
-    int T;
-    int T2;
-    int q;
-    int cc;
-    int t;
-    int d;
-    int p1;
-    int p2;
-    int p4;
-    int c5;
-    int t2;
-    unsigned long m3;
-    unsigned long m10;
-    unsigned long e7;
-    unsigned long big;
+/* sceGsSetDefDispEnv: fill a display environment for a psm frame buffer of
+   w x h shown at (dx, dy): PMODE, SMODE2 from the interlace and field
+   settings, DISPFB, DISPLAY placed for NTSC (2), PAL (3) or 480p (0x50)
+   with the console's own offsets (asked of func_00121DB8 when
+   func_00121D18 allows, zero otherwise), and a black background.
+   Written from the retail routine. */
+void func_00121DC8(GsDispEnv_DC8 *disp, short psm, short w, short h, short dx, short dy) {
+    GsGParam_DC8 *gp = func_00121D08_dc8();
+    int off[4];
 
-    x = (short)a1;
-    y = (short)a2;
-    w = (short)a3;
-    h = (short)a4;
-    o = (short)a5;
-
-    P = (char *)func_00121D08_x(out);
-    f2 = *(unsigned short *)(P + 2);
-    if ((unsigned int)(f2 - 2) < 2u) {
-        l[3] = 0;
-        l[2] = 0;
-        l[1] = 0;
-        l[0] = 0;
+    if (gp->omode != 2 && gp->omode != 3 && func_00121D18()) {
+        func_00121DB8_dc8(gp->omode, &off[0], &off[1], &off[2], &off[3]);
     } else {
-        if (func_00121D18_x(f2) != 0) {
-            func_00121DB8_x((short)f2, &l[0], &l[1], &l[2], &l[3]);
+        off[3] = 0;
+        off[2] = 0;
+        off[1] = 0;
+        off[0] = 0;
+    }
+    disp->pmode = 0x66;
+    if (gp->interlace) {
+        if (gp->ffmode == 0) {
+            disp->smode2 = 1;
         } else {
-            l[3] = 0;
-            l[2] = 0;
-            l[1] = 0;
-            l[0] = 0;
+            disp->smode2 = 3;
         }
-    }
-
-    *(unsigned long *)(out + 0x00) = 0x66;
-    f0s = *(short *)(P + 0);
-    if (f0s == 0) {
-        T = 2;
     } else {
-        f4s = *(short *)(P + 4);
-        T = (f4s != 0) ? 3 : 1;
+        disp->smode2 = 2;
     }
-    *(unsigned long *)(out + 0x08) = (unsigned long)(long)T;
-
-    T2 = (short)f2;
-    *(unsigned long *)(out + 0x10) =
-        ((unsigned long)(long)(x & 0xF) << 15) |
-        ((unsigned long)(long)((((y + 0x3F) >> 6) & 0x3F)) << 9);
-
-    if (T2 == 2 || T2 == 3) {
-        /* Shared shape of A (T2 == 2) and B3 (T2 == 3); the constants differ. */
-        int k1 = (T2 == 2) ? 0x32 : 0x48;
-        int k2 = (T2 == 2) ? 0x27C : 0x290;
-        int k3 = (T2 == 2) ? 0x19 : 0x24;
-        if (f0s == 1) {
-            q = (y + 0x9FF) / y;
-            t = o + l[1] + k1;
-            cc = l[0] + k2;
-            d = t & 0xFFF;
-            e7 = (unsigned long)(long)d << 12;
-            p1 = q * y;
-            p2 = h * q;
-            m10 = (unsigned long)(long)(q - 1) << 23;
-            p1 = p1 - 1;
-            m3 = (unsigned long)(long)p1 << 32;
-            c5 = (int)(((long)p2 + (long)cc) & 0xFFF);
-            if (*(short *)(P + 4) == 0) {
-                t2 = w - 1;
-            } else {
-                t2 = (w << 1) - 1;
-            }
-            m3 = m3 | m10;
-            big = (unsigned long)(long)t2 << 44;
-            big = (unsigned long)(long)c5 | big;
-            m3 = m3 | big;
-            *(unsigned long *)(out + 0x18) = m3 | e7;
+    disp->dispfb = ((u64)(psm & 0xF) << 15) | ((u64)(((w + 63) >> 6) & 0x3F) << 9);
+    if (gp->omode == 2) {
+        if (gp->interlace == 1) {
+            int magh = (w + 2559) / w;
+            long ox = (long)off[0] + 636;
+            disp->display = ((u64)(magh - 1) << 23) | ((u64)(gp->ffmode ? h * 2 - 1 : h - 1) << 44) | ((dx * magh + ox) & 0xFFF) | ((u64)((dy + off[1] + 50) & 0xFFF) << 12) | ((u64)(magh * w - 1) << 32);
         } else {
-            q = f0s / y;
-            t2 = w - 1;
-            t = o + l[1] + k3;
-            d = t & 0xFFF;
-            p1 = h * q;
-            p4 = q * y;
-            cc = l[0] + k2;
-            m10 = (unsigned long)(long)(q - 1) << 23;
-            c5 = (int)(((long)p1 + (long)cc) & 0xFFF);
-            p4 = p4 - 1;
-            big = (unsigned long)(long)t2 << 44;
-            big = (unsigned long)(long)c5 | big;
-            m3 = (unsigned long)(long)p4 << 32;
-            m3 = m3 | m10;
-            m3 = m3 | big;
-            m3 = m3 | ((unsigned long)(long)d << 12);
-            *(unsigned long *)(out + 0x18) = m3;
+            long ox = (long)off[0] + 636;
+            disp->display = ((u64)(((w + 2559) / w) * w - 1) << 32) | ((dx * ((w + 2559) / w) + ox) & 0xFFF) | ((u64)(h - 1) << 44) | ((u64)((dy + off[1] + 25) & 0xFFF) << 12) | ((u64)(((w + 2559) / w) - 1) << 23);
         }
-    } else if (T2 == 0x50) {
-        t = 0x2D0 - y;
-        t = t + (int)((unsigned int)t >> 31);
-        t = (t >> 1) << 1;
-        c5 = t + l[0];
-        cc = (h << 1) + 0xE8;
-        c5 = c5 + cc;
-        m3 = (unsigned long)(long)(w - 1) << 44;
-        m10 = (unsigned long)(long)((y << 1) - 1) << 32;
-        c5 = c5 & 0xFFF;
-        t2 = o + l[1] + 0x23;
-        c5 = c5 | 0x800000;
-        m3 = m3 | m10;
-        t2 = t2 & 0xFFF;
-        m3 = m3 | (unsigned long)(long)c5;
-        m3 = m3 | ((unsigned long)(long)t2 << 12);
-        *(unsigned long *)(out + 0x18) = m3;
+    } else if (gp->omode == 3) {
+        if (gp->interlace == 1) {
+            int magh = (w + 2559) / w;
+            long ox = (long)off[0] + 656;
+            disp->display = ((u64)(magh - 1) << 23) | ((u64)(gp->ffmode ? h * 2 - 1 : h - 1) << 44) | ((dx * magh + ox) & 0xFFF) | ((u64)((dy + off[1] + 72) & 0xFFF) << 12) | ((u64)(magh * w - 1) << 32);
+        } else {
+            long ox = (long)off[0] + 656;
+            disp->display = ((u64)(((w + 2559) / w) * w - 1) << 32) | ((dx * ((w + 2559) / w) + ox) & 0xFFF) | ((u64)(h - 1) << 44) | ((u64)((dy + off[1] + 36) & 0xFFF) << 12) | ((u64)(((w + 2559) / w) - 1) << 23);
+        }
+    } else if (gp->omode == 0x50) {
+        long dx2 = (long)(dx * 2) + 232;
+        disp->display = ((u64)(1) << 23) | ((u64)(h - 1) << 44) | (((720 - w) / 2 * 2 + (long)off[0] + dx2) & 0xFFF) | ((u64)((dy + off[1] + 35) & 0xFFF) << 12) | ((u64)(w * 2 - 1) << 32);
     } else {
-        func_0011A6C8_x(D_00153140);
+        func_0011A6C8(D_00153140);
     }
-
-    *(unsigned long *)(out + 0x20) = 0;
+    disp->bgcolor = 0;
 }
