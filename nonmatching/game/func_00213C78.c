@@ -8,6 +8,8 @@
  *   empty beqz slot. Left: retail loads the +0x74 callback once into $v1 and leaves the jalr slot empty
  *   (daddu $a0 before it); here the call reloads it through a volatile pointer into $v0. A plain or local
  *   callback fills the jalr slot (SIZE 144). Lombyte's pending draft (update_visible_resident_objects) is the same.
+ *   Ruled out 2026-10-18: SN v1.36 and v2.74 compilers, and -fno-schedule-insns(2)/-fno-sched-interblock/-fno-force-mem/
+ *   -fno-expensive-optimizations/-fno-cse-follow-jumps/-fno-regmove/-mno-split-addresses: none gets closer.
  */
 /* Moby update loop. Fetches the head of the moby list from func_0020E6B8_X and keeps it in
    D_00160024_X. For each moby whose state byte is non-negative (signed): calls func_0020E3D0_X

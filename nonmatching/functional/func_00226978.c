@@ -8,6 +8,8 @@
  *   Left: ours schedules the zero ahead of the D_001D603B store; retail puts it after the lw of stream->buffer,
  *   and the D_001B45E5/D_001B3580 address registers swap. Tried: zero placement, u8/u16/u32/s16 counters,
  *   do/for/while loops, a separate counter; ~120 permuter iterations.
+ *   Ruled out 2026-10-18: SN v1.36 and v2.74 compilers, and -fno-schedule-insns(2)/-fno-sched-interblock/-fno-force-mem/
+ *   -fno-expensive-optimizations/-fno-cse-follow-jumps/-fno-regmove/-mno-split-addresses: none gets closer.
  */
 /* functional: medium. The NTSC decomp's pending C for the same instructions (a draft it has not matched
    yet), carried to PAL's names by OpenRAC's tools/port.py. Never compared with retail's bytes here. */
