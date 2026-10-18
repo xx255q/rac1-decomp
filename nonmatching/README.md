@@ -127,7 +127,7 @@ Each file is the best attempt so far at a level function that isn't exact yet.
 | [`func_00226D50`](game/func_00226D50.c) | game | 340 | ? | - |
 | [`func_0022DD68`](game/func_0022DD68.c) | game | 3252 | ? | - |
 | [`func_0022F738`](functional/func_0022F738.c) | functional | 1188 | ? | - |
-| [`func_0022FDC0`](game/func_0022FDC0.c) | game | 2012 | ? | - |
+| [`func_0022FDC0`](game/func_0022FDC0.c) | game | 2012 | SIZE ours 2004 / retail 2012 | - |
 | [`func_00238D90`](game/func_00238D90.c) | game | 516 | ? | - |
 | [`func_00238F98`](functional/func_00238F98.c) | functional | 484 | ? | - |
 | [`func_0023C910`](functional/func_0023C910.c) | functional | 76 | ? | - |
