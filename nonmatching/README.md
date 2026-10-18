@@ -30,6 +30,7 @@ Each file is the best attempt so far at a level function that isn't exact yet.
 | [`func_00116948`](core/func_00116948.c) | core | 0 | ? | - |
 | [`func_00116B00`](core/func_00116B00.c) | core | 0 | ? | - |
 | [`func_00119EA8`](functional/func_00119EA8.c) | functional | 0 | ? | - |
+| [`func_001211B0`](core/func_001211B0.c) | core | 736 | BYTES 15/736 | 98.0% |
 | [`func_00121750`](core/func_00121750.c) | core | 0 | ? | - |
 | [`func_00121DC8`](core/func_00121DC8.c) | core | 0 | ? | - |
 | [`func_00125358`](core/func_00125358.c) | core | 0 | ? | - |
@@ -38,6 +39,7 @@ Each file is the best attempt so far at a level function that isn't exact yet.
 | [`func_0012A7E8`](functional/func_0012A7E8.c) | functional | 0 | ? | - |
 | [`func_0012AAA8`](core/func_0012AAA8.c) | core | 0 | ? | - |
 | [`func_0012DA28`](functional/func_0012DA28.c) | functional | 0 | ? | - |
+| [`func_0012C608`](core/func_0012C608.c) | core | 680 | BYTES 358/680 | 47.4% |
 | [`func_0012DB68`](functional/func_0012DB68.c) | functional | 0 | ? | - |
 | [`func_0012EB18`](functional/func_0012EB18.c) | functional | 0 | ? | - |
 | [`func_001F7070`](game/func_001F7070.c) | game | 1264 | ? | - |
