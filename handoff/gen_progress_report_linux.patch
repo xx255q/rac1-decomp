@@ -1,0 +1,28 @@
+--- tools/gen_progress_report.py	2026-10-17 21:48:30.979164160 -0400
++++ /tmp/claude-0/-home-claude/7920c452-5289-5bb4-81a7-161375ecf682/scratchpad/gen_progress_report_linux.py	2026-10-17 22:55:26.429828662 -0400
+@@ -300,6 +300,12 @@
+ 
+ 
+ def overlay_match_results(file_map: dict) -> dict[str, float]:
++    # LOCAL STAND-IN (no level dumps here): level results from main's committed report.
++    import json as _j
++    _r = _j.load(open("build-sn/report_main.json"))
++    _f = {f["name"]: f.get("fuzzy_match_percent", 0.0) for u in _r["units"]
++          if is_level_unit(u) for f in u.get("functions", [])}
++    return {n: _f[n] for fns in file_map.values() for n, _c in fns}
+     """name -> 100.0 or 0.0 for every overlay function in FILE_MAP
+     (docs/OVERLAYS.md, "Plan" step 3): only a C-defined function can score
+     100, and only when tools/overlay_check.py says EXACT for it, built
+@@ -453,9 +459,9 @@
+         f.unlink()
+     start_wineserver()
+     steps = [
+-        [f"{TC}/make.exe", "-f", "Makefile.sn"],
+-        [sys.executable, "tools/gen_ld.py"],
+-        [f"{TC}/ee-ld.exe", "-T", "build-sn/rac1.ld", "build-sn/bss_equs.o", "-o", LINKED_ELF],
++        make_sn(),
++        ["bash", "rac1.ld.sh"],
++        sn(f"{TC}/ee-ld.exe", "-T", "build-sn/rac1.ld", "build-sn/bss_equs.o", "-o", LINKED_ELF),
+     ]
+     for cmd in steps:
+         r = subprocess.run(cmd, capture_output=True, text=True, env=ensure_env())
