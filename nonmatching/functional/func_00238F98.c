@@ -6,6 +6,8 @@
  *   First compared with retail here: externs aliased so it compiles in update.c (it did not before).
  *   Left: float registers in the tail (0.25f in $f5, retail $f6; first[0]/first[1] in $f0/$f4, retail $f4/$f5)
  *   and the load order of half_width. Tried: locals for first[0]/[1], dropping the volatile width store (worse).
+ *   Ruled out 2026-10-18: SN v1.36 and v2.74 compilers, and -fno-schedule-insns(2)/-fno-sched-interblock/-fno-force-mem/
+ *   -fno-expensive-optimizations/-fno-cse-follow-jumps/-fno-regmove/-mno-split-addresses: none gets closer.
  */
 /* functional: medium. The NTSC decomp's pending C for the same instructions (a draft it has not matched
    yet), carried to PAL's names by OpenRAC's tools/port.py. Never compared with retail's bytes here. */

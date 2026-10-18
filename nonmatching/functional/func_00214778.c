@@ -8,6 +8,8 @@
  *   D_001600C8 is reached through $gp (declared extern short); func_00215078 is called in each branch.
  *   Left: retail branches where ours emits movn/movz (case 1's c == 2 test, case 7's D_0013E633 choice),
  *   the dx/dy subtraction operand registers, and saved-register numbering.
+ *   Ruled out 2026-10-18: SN v1.36 and v2.74 compilers, and -fno-schedule-insns(2)/-fno-sched-interblock/-fno-force-mem/
+ *   -fno-expensive-optimizations/-fno-cse-follow-jumps/-fno-regmove/-mno-split-addresses: none gets closer.
  */
 /* functional: medium. Picks the next animation (returned) for an actor from its mode/state bytes (B+0x28/0x29/0x2A) and the buttons, via a state table D_001CC400; sets *outA (animation status), *outI (state id), *outF (B+0x2C speed), advances/reloads the timer at an+0x1C. Static check only; the 0x47 block (chase-toward-D_0013F450 kick) is the least certain part. */
 extern short D_001600C8_4770 __asm__("D_001600C8");
