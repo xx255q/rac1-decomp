@@ -1,7 +1,18 @@
+/* NON_MATCHING func_00226978 -- src/game/pause.c
+ * Best so far: BYTES 43/892 (95.2% of the bytes match), checked 2026-10-18.
+ * Not built into anything: the retail assembly stays in the source file
+ * until a candidate is EXACT (docs/NONMATCHING.md). Start from this one.
+ * What the last attempts found:
+ *   Externs aliased with _26978 names so it compiles in pause.c again (it no longer did).
+ *   The table loop starts at 0 (retail daddu $s0,$0,$0), not class_slot >> 8.
+ *   Left: ours schedules the zero ahead of the D_001D603B store; retail puts it after the lw of stream->buffer,
+ *   and the D_001B45E5/D_001B3580 address registers swap. Tried: zero placement, u8/u16/u32/s16 counters,
+ *   do/for/while loops, a separate counter; ~120 permuter iterations.
+ */
 /* functional: medium. The NTSC decomp's pending C for the same instructions (a draft it has not matched
    yet), carried to PAL's names by OpenRAC's tools/port.py. Never compared with retail's bytes here. */
-extern void * D_001B3580[224];
-extern u8 D_001B3E40[0x800];
+extern void * D_001B3580_26978[224] __asm__("D_001B3580");
+extern u8 D_001B3E40_26978[0x800] __asm__("D_001B3E40");
 struct DiscFile_26978 {
     s32 sector;
     s32 size;
@@ -54,7 +65,7 @@ struct DiscTable_26978 {
     struct DiscFile_26978 music_20000[36]; /* 0x2988, music tracks 20000.. */
     s32 music_tracks[1]; /* 0x2AA8, by track number */
 };
-extern struct DiscTable_26978 D_00137C80;
+extern struct DiscTable_26978 D_00137C80_26978 __asm__("D_00137C80");
 typedef struct {
     u8 pad_0[0x20];
     u8 moby_state;
@@ -82,19 +93,19 @@ typedef struct {
     s32 read_offset;
     StreamedAnimationMoby_26978 *moby;
 } MobyAnimationStream_26978;
-extern s16 D_001517D8[];
-extern s32 D_001517EC[];
-extern s16 D_0015182A[];
-extern s32 D_0015EE88 MACRO_ADDR;
-extern s32 D_0015EF20 MACRO_ADDR;
-extern u8 D_001D603B[];
-extern s32 func_001F98C0(s32);
-extern void func_00203B18(StreamedClassResource_26978 *, s32);
-extern void func_0020C468(u8 *, u8 *);
-extern void func_00213DE0(void *, s32, s32, s32);
-extern s32 func_00216960(void);
-extern s32 func_00217628(u8 *, s32, s32);
-extern s32 func_00227068(u8 *);
+extern s16 D_001517D8_26978[] __asm__("D_001517D8");
+extern s32 D_001517EC_26978[] __asm__("D_001517EC");
+extern s16 D_0015182A_26978[] __asm__("D_0015182A");
+extern s32 D_0015EE88_26978 __asm__("D_0015EE88") MACRO_ADDR;
+extern s32 D_0015EF20_26978 __asm__("D_0015EF20") MACRO_ADDR;
+extern u8 D_001D603B_26978[] __asm__("D_001D603B");
+extern s32 func_001F98C0_26978(s32) __asm__("func_001F98C0");
+extern void func_00203B18_26978(StreamedClassResource_26978 *, s32) __asm__("func_00203B18");
+extern void func_0020C468_26978(u8 *, u8 *) __asm__("func_0020C468");
+extern void func_00213DE0_26978(void *, s32, s32, s32) __asm__("func_00213DE0");
+extern s32 func_00216960_26978(void) __asm__("func_00216960");
+extern s32 func_00217628_26978(u8 *, s32, s32) __asm__("func_00217628");
+extern s32 func_00227068_26978(u8 *) __asm__("func_00227068");
 
 /* Adapted from Lombyte (MIT) for PAL by OpenRAC's tools/port.py: src/assembly/textbin/fun_002256e8.c, update_streamed_moby_animation. */
 s32 func_00226978(MobyAnimationStream_26978 *stream) {
@@ -109,41 +120,41 @@ s32 func_00226978(MobyAnimationStream_26978 *stream) {
 
     switch (stream->state) {
     case 0:
-        if (D_001517D8[0] != 0) {
+        if (D_001517D8_26978[0] != 0) {
             break;
         }
-        table_index = 0x4F000 - (D_00137C80.animation_table.size << 11);
-        if (func_00217628(stream->buffer + table_index, D_00137C80.animation_table.sector,
-                                    D_00137C80.animation_table.size) != 0) {
+        table_index = 0x4F000 - (D_00137C80_26978.animation_table.size << 11);
+        if (func_00217628_26978(stream->buffer + table_index, D_00137C80_26978.animation_table.sector,
+                                    D_00137C80_26978.animation_table.size) != 0) {
             stream->read_offset = table_index;
             stream->state = 1;
-            D_001D603B[0] = 1;
-            func_00227068(stream->buffer);
+            D_001D603B_26978[0] = 1;
+            func_00227068_26978(stream->buffer);
             return 0;
         }
         stream->state = 3;
         break;
     case 1:
         /* Decompress the completed read and relocate three animation tables. */
-        if (D_001517D8[0] != 0) {
+        if (D_001517D8_26978[0] != 0) {
             break;
         }
-        D_001D603B[0] = 0;
-        func_0020C468(stream->buffer + stream->read_offset, stream->buffer);
-        class_slot = D_001B3E40[0x7A5];
-        class_resource = (StreamedClassResource_26978 **)&D_001B3580[class_slot];
+        D_001D603B_26978[0] = 0;
+        func_0020C468_26978(stream->buffer + stream->read_offset, stream->buffer);
+        class_slot = D_001B3E40_26978[0x7A5];
+        class_resource = (StreamedClassResource_26978 **)&D_001B3580_26978[class_slot];
         header = (AnimationTableHeader_26978 *)stream->buffer;
-        table_index = class_slot >> 8;
+        table_index = 0;
     next:
         animation_table = stream->buffer + ((AnimationTableHeader_26978 *)((u8 *)header + (table_index << 3)))->offset;
         table_index++;
         (*class_resource)->animation_tables[table_index] = animation_table;
-        func_00203B18(*class_resource, table_index);
+        func_00203B18_26978(*class_resource, table_index);
         if (table_index < 3) {
             goto next;
         }
         stream->state = 2;
-        if (D_0015EF20 == 0) {
+        if (D_0015EF20_26978 == 0) {
             stream->moby->moby_state = 0;
         } else {
             stream->moby->moby_state = 4;
@@ -157,34 +168,34 @@ s32 func_00226978(MobyAnimationStream_26978 *stream) {
         case 0:
         case 2:
         case 4:
-            dialogue_column = D_0015EE88 - 1;
+            dialogue_column = D_0015EE88_26978 - 1;
             if (dialogue_column < 0) {
                 dialogue_column = 0;
             }
             animation_index = moby->moby_state >> 1;
             if (moby->animation_frame_counter == 0) {
-                D_001517EC[0] = animation_index * 6 + dialogue_column + 60000;
+                D_001517EC_26978[0] = animation_index * 6 + dialogue_column + 60000;
             }
             moby->animation_frame_counter++;
-            if (moby->animation_frame_counter > func_001F98C0(0x78)) {
-                moby->animation_frame_counter = func_001F98C0(0x78);
+            if (moby->animation_frame_counter > func_001F98C0_26978(0x78)) {
+                moby->animation_frame_counter = func_001F98C0_26978(0x78);
             }
-            if (moby->animation_frame_counter < func_001F98C0(0x78)) {
+            if (moby->animation_frame_counter < func_001F98C0_26978(0x78)) {
                 return 0;
             }
-            if (D_0015182A[0] != 3) {
+            if (D_0015182A_26978[0] != 3) {
                 return 0;
             }
             moby->animation_frame_counter = 0;
             moby->moby_state++;
-            func_00213DE0(moby, animation_index + 1, 0, func_001F98C0(0x18));
+            func_00213DE0_26978(moby, animation_index + 1, 0, func_001F98C0_26978(0x18));
             break;
         case 1:
         case 3:
         case 5:
             if (moby->animation_frame_counter == 0 &&
                 moby->primary_animation == moby->secondary_animation) {
-                func_00216960();
+                func_00216960_26978();
                 moby->animation_frame_counter = 1;
             }
             if (moby->transition_flags & 2) {
@@ -194,19 +205,19 @@ s32 func_00226978(MobyAnimationStream_26978 *stream) {
                     moby->moby_state = 6;
                 }
                 moby->animation_frame_counter = 0;
-                func_00213DE0(moby, 0, 0, func_001F98C0(0x18));
+                func_00213DE0_26978(moby, 0, 0, func_001F98C0_26978(0x18));
                 break;
             }
             break;
         case 6:
             moby->animation_frame_counter++;
-            if (moby->animation_frame_counter > func_001F98C0(0xF0)) {
-                moby->animation_frame_counter = func_001F98C0(0xF0);
+            if (moby->animation_frame_counter > func_001F98C0_26978(0xF0)) {
+                moby->animation_frame_counter = func_001F98C0_26978(0xF0);
             }
-            if (moby->animation_frame_counter < func_001F98C0(0xF0)) {
+            if (moby->animation_frame_counter < func_001F98C0_26978(0xF0)) {
                 return 0;
             }
-            if (D_0015EF20 == 0) {
+            if (D_0015EF20_26978 == 0) {
                 moby->moby_state = 0;
             } else {
                 moby->moby_state = 4;

@@ -1,7 +1,16 @@
-/* functional: medium. Selects which of three slot records (pointer pairs at 0x1B8/0x1BC, 0x1C8/0x1CC, 0x1D8/0x1DC; their word 0x28 is a ready flag) to refresh for the current mode (0x174), copies 16 fields of the owner into it and returns 1 when the needed slots are ready. Modes outside 1..3 would store through NULL in retail; here that store is skipped. */
+/* NON_MATCHING func_00129690 -- src/core/00125630.c
+ * Best so far: BYTES 206/692 (70.2% of the bytes match), checked 2026-10-18.
+ * Not built into anything: the retail assembly stays in the source file
+ * until a candidate is EXACT (docs/NONMATCHING.md). Start from this one.
+ * What the last attempts found:
+ *   Same size now (was SIZE 680/692). Retail stores through rec even when mode is not 1-3 (rec stays NULL).
+ *   Fixed: with a1 != 0 retail tests rec 0x1D0 (0x1E0 when mode is 1), not 0x1C8; the slot swap is three pairwise
+ *   swaps; the kind != 3 tail sets ret = 1 per test. Left: mode/kind and n/2/3 constants sit in other temporaries,
+ *   and retail builds ret = (x == 1) with a movn from a register holding 1 where ours uses sltiu.
+ */
 int func_00129690(char *p, int a1) {
-    int mode;
     int kind;
+    int mode;
     int n;
     int ret;
     char *rec;
@@ -41,23 +50,23 @@ int func_00129690(char *p, int a1) {
         } else {
             if ((*(int *)(*(char **)(p + 0x1C8) + 0x28) == 1 && *(int *)(*(char **)(p + 0x1D8) + 0x28) == 1) ||
                 *(int *)(p + 0x1A4) != 0) {
-                ret = (*(int *)(*(char **)(p + 0x1CC) + 0x28) == 1 && *(int *)(*(char **)(p + 0x1DC) + 0x28) == 1);
+                if (*(int *)(*(char **)(p + 0x1CC) + 0x28) == 1) {
+                    ret = (*(int *)(*(char **)(p + 0x1DC) + 0x28) == 1);
+                }
             }
         }
     } else {
         if (a1 == 0) {
-            int x = *(int *)(p + 0x1B8);
-            int y = *(int *)(p + 0x1BC);
-            int z = *(int *)(p + 0x1C8);
-            int w = *(int *)(p + 0x1CC);
-            int u = *(int *)(p + 0x1D8);
-            int v = *(int *)(p + 0x1DC);
-            *(int *)(p + 0x1BC) = x;
-            *(int *)(p + 0x1CC) = z;
-            *(int *)(p + 0x1B8) = y;
-            *(int *)(p + 0x1C8) = w;
-            *(int *)(p + 0x1D8) = v;
-            *(int *)(p + 0x1DC) = u;
+            int t;
+            t = *(int *)(p + 0x1B8);
+            *(int *)(p + 0x1B8) = *(int *)(p + 0x1BC);
+            *(int *)(p + 0x1BC) = t;
+            t = *(int *)(p + 0x1C8);
+            *(int *)(p + 0x1C8) = *(int *)(p + 0x1CC);
+            *(int *)(p + 0x1CC) = t;
+            t = *(int *)(p + 0x1D8);
+            *(int *)(p + 0x1D8) = *(int *)(p + 0x1DC);
+            *(int *)(p + 0x1DC) = t;
         }
         *(int *)(p + 0x1C0) = *(int *)(p + 0x1BC);
         *(int *)(p + 0x1D0) = *(int *)(p + 0x1CC);
@@ -65,15 +74,18 @@ int func_00129690(char *p, int a1) {
         if (mode == 3) {
             if (kind != 2) {
                 ret = 1;
-            } else {
-                ret = (*(int *)(*(char **)(p + 0x1B8) + 0x28) == 1);
+            } else if (*(int *)(*(char **)(p + 0x1B8) + 0x28) == 1) {
+                ret = 1;
             }
-        } else if (kind != 2) {
-            ret = 1;
-        } else if (a1 != 0 && *(int *)(*(char **)(p + 0x1C8) + 0x28) == 1) {
-            ret = 1;
-        } else if (*(int *)(*(char **)(p + 0x1C8) + 0x28) == 1) {
-            ret = (*(int *)(*(char **)(p + 0x1D8) + 0x28) == 1);
+        } else {
+            char *sel = (mode != 1) ? *(char **)(p + 0x1D0) : *(char **)(p + 0x1E0);
+            if (kind != 2) {
+                ret = 1;
+            } else if (a1 != 0 && *(int *)(sel + 0x28) == 1) {
+                ret = 1;
+            } else if (*(int *)(*(char **)(p + 0x1C8) + 0x28) == 1 && *(int *)(*(char **)(p + 0x1D8) + 0x28) == 1) {
+                ret = 1;
+            }
         }
     }
     if (mode == 2)
@@ -82,8 +94,6 @@ int func_00129690(char *p, int a1) {
         rec = *(char **)(p + 0x1D0);
     else if (mode == 3)
         rec = *(char **)(p + 0x1C0);
-    else
-        return ret;
     *(int *)(rec + 0x28) = 0;
     *(long long *)(rec + 0x18) = *(long long *)(p + 0x828);
     *(int *)(rec + 0x2C) = *(int *)(p + 0x150);
